@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/celsobenedetti/org-archiver/internal/orgfile"
 	"github.com/niklasfasching/go-org/org"
 )
 
@@ -110,7 +111,7 @@ func TestBuildArchiveSection(t *testing.T) {
 	now := time.Date(2026, 8, 8, 12, 24, 0, 0, time.UTC)
 	section := buildArchiveSection(now, archived)
 
-	out := render([]org.Node{section})
+	out := orgfile.Render([]org.Node{section})
 	want := `* archive 2026-08-08 12:24
 ** DONE deep item
 *** sub item

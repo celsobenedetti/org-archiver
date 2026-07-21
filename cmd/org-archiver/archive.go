@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/celsobenedetti/org-archiver/internal/orgfile"
 	"github.com/niklasfasching/go-org/org"
 )
 
@@ -96,16 +96,10 @@ func buildArchiveSection(now time.Time, archived []org.Headline) org.Headline {
 	}
 }
 
-// render pretty-prints nodes as an org-mode string.
-func render(nodes []org.Node) string {
-	w := org.NewOrgWriter()
-	org.WriteNodes(w, nodes...)
-	return w.String()
-}
-
-// parseOrg parses org source, returning its top-level nodes. Our done states
-// are registered as TODO keywords so go-org populates Headline.Status for them
-// (files with their own #+TODO: line still override this default).
+// parseOrg parses org source, returning its top-level nodes. It deliberately
+// does not use orgfile.Parse: the archiver needs done keywords registered on the
+// parser so go-org populates Headline.Status for them (files with their own
+// #+TODO: line still override this default), followed by forceDoneStatus.
 func parseOrg(source, path string) ([]org.Node, error) {
 	c := org.New().Silent()
 	c.DefaultSettings["TODO"] = "TODO | DONE CANCELLED"
@@ -120,33 +114,6 @@ func parseOrg(source, path string) ([]org.Node, error) {
 // archivePath returns the .org_archive path for a source file.
 func archivePath(source string) string {
 	return source + "_archive"
-}
-
-// writeAtomic writes data to path via a temp file in the same directory then
-// renames over the target, preserving mode when the file already exists.
-func writeAtomic(path string, data []byte) error {
-	dir := filepath.Dir(path)
-	mode := os.FileMode(0o644)
-	if fi, err := os.Stat(path); err == nil {
-		mode = fi.Mode()
-	}
-	tmp, err := os.CreateTemp(dir, ".org-archiver-*")
-	if err != nil {
-		return err
-	}
-	tmpName := tmp.Name()
-	defer os.Remove(tmpName)
-	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Chmod(tmpName, mode); err != nil {
-		return err
-	}
-	return os.Rename(tmpName, path)
 }
 
 // processFile archives done items from a single source file into its
@@ -181,10 +148,10 @@ func processFile(path string, now time.Time) (int, error) {
 	}
 	archNodes = append(archNodes, section)
 
-	if err := writeAtomic(path, []byte(render(kept))); err != nil {
+	if err := orgfile.WriteAtomic(path, []byte(orgfile.Render(kept))); err != nil {
 		return 0, err
 	}
-	if err := writeAtomic(archPath, []byte(render(archNodes))); err != nil {
+	if err := orgfile.WriteAtomic(archPath, []byte(orgfile.Render(archNodes))); err != nil {
 		return 0, err
 	}
 	return len(archived), nil
