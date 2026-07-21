@@ -21,10 +21,15 @@ func Parse(source, path string) ([]org.Node, error) {
 	return d.Nodes, nil
 }
 
+// TagsColumn is the column headline tags are right-aligned to (go-org defaults
+// to 77).
+const TagsColumn = 80
+
 // Render pretty-prints nodes as a standardized org-mode string using go-org's
-// OrgWriter defaults.
+// OrgWriter defaults, except tags are aligned to TagsColumn.
 func Render(nodes []org.Node) string {
 	w := org.NewOrgWriter()
+	w.TagsColumn = TagsColumn
 	org.WriteNodes(w, nodes...)
 	return w.String()
 }

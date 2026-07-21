@@ -3,6 +3,7 @@ package orgfile
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -15,6 +16,23 @@ func TestRenderStandardizesKeysAndCase(t *testing.T) {
 	want := "#+TITLE: hi\n* head\n:PROPERTIES:\n:ID: x\n:END:\n"
 	if got != want {
 		t.Fatalf("render mismatch:\n--- got ---\n%s\n--- want ---\n%s", got, want)
+	}
+}
+
+func TestRenderAlignsTagsToColumn80(t *testing.T) {
+	nodes, err := Parse("* head :work:\n", "t.org")
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	got := Render(nodes)
+	// tag string ":work:" (6 chars) right-aligned so it ends at column 80,
+	// i.e. starts at column 75 (0-indexed 74) -> 80 total line width.
+	want := "* head" + strings.Repeat(" ", 80-len("* head")-len(":work:")) + ":work:\n"
+	if got != want {
+		t.Fatalf("tag alignment mismatch:\n--- got ---\n%q\n--- want ---\n%q", got, want)
+	}
+	if len(got) != len(want) || len(strings.TrimRight(got, "\n")) != 80 {
+		t.Fatalf("line width = %d, want 80", len(strings.TrimRight(got, "\n")))
 	}
 }
 
