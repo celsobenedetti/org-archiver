@@ -6,8 +6,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/celsobenedetti/org-archiver/internal/orgfile"
 	"github.com/niklasfasching/go-org/org"
+
+	"github.com/celsobenedetti/org-archiver/internal/orgfile"
 )
 
 // headlineRe matches a line that is already an org headline marker.
@@ -17,14 +18,22 @@ var headlineRe = regexp.MustCompile(`^\*+\s`)
 // doesn't exist yet. A note whose first line is already a headline (e.g.
 // "* Buy milk") is used as-is, so a full subtree can be captured verbatim;
 // otherwise the first line becomes a new level-1 headline's title and any
-// remaining lines become its body.
-func capture(path, note string) error {
+// remaining lines become its body. tags, if non-empty, are appended to the
+// heading line as an org tag group (e.g. "* Buy milk :home:errand:").
+func capture(path, note string, tags []string) error {
 	note = strings.TrimRight(note, "\n")
 	if strings.TrimSpace(note) == "" {
 		return fmt.Errorf("empty note")
 	}
 	if !headlineRe.MatchString(note) {
 		note = "* " + note
+	}
+	if len(tags) > 0 {
+		heading, rest, _ := strings.Cut(note, "\n")
+		note = heading + " :" + strings.Join(tags, ":") + ":"
+		if rest != "" {
+			note += "\n" + rest
+		}
 	}
 	note += "\n"
 
