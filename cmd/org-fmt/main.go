@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/celsobenedetti/org-archiver/internal/orgfile"
+	"github.com/celsobenedetti/orgfile"
 )
 
 func main() {

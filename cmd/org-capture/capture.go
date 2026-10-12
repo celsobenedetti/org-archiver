@@ -8,7 +8,7 @@ import (
 
 	"github.com/niklasfasching/go-org/org"
 
-	"github.com/celsobenedetti/org-archiver/internal/orgfile"
+	"github.com/celsobenedetti/orgfile"
 )
 
 // headlineRe matches a line that is already an org headline marker.

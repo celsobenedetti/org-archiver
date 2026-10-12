@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/celsobenedetti/org-archiver/internal/orgfile"
+	"github.com/celsobenedetti/orgfile"
 	"github.com/niklasfasching/go-org/org"
 )
 
@@ -67,27 +67,12 @@ func partition(nodes []org.Node) (kept []org.Node, archived []org.Headline) {
 	return kept, archived
 }
 
-// shiftHeadline re-levels a headline and all its descendant headlines by delta.
-func shiftHeadline(h org.Headline, delta int) org.Headline {
-	h.Lvl += delta
-	children := make([]org.Node, len(h.Children))
-	for i, c := range h.Children {
-		if ch, ok := c.(org.Headline); ok {
-			children[i] = shiftHeadline(ch, delta)
-		} else {
-			children[i] = c
-		}
-	}
-	h.Children = children
-	return h
-}
-
 // buildArchiveSection wraps the archived headlines in a level-1
 // "archive <timestamp>" heading, re-leveling each subtree root to level 2.
 func buildArchiveSection(now time.Time, archived []org.Headline) org.Headline {
 	children := make([]org.Node, len(archived))
 	for i, h := range archived {
-		children[i] = shiftHeadline(h, 2-h.Lvl)
+		children[i] = orgfile.ShiftHeadline(h, 2-h.Lvl)
 	}
 	return org.Headline{
 		Lvl:      1,
@@ -101,14 +86,12 @@ func buildArchiveSection(now time.Time, archived []org.Headline) org.Headline {
 // parser so go-org populates Headline.Status for them (files with their own
 // #+TODO: line still override this default), followed by forceDoneStatus.
 func parseOrg(source, path string) ([]org.Node, error) {
-	c := org.New().Silent()
-	c.DefaultSettings["TODO"] = "TODO | DONE CANCELLED"
-	d := c.Parse(strings.NewReader(source), path)
-	if d.Error != nil {
-		return nil, d.Error
+	nodes, err := orgfile.ParseWithTODO(source, path, "TODO | DONE CANCELLED")
+	if err != nil {
+		return nil, err
 	}
-	forceDoneStatus(d.Nodes)
-	return d.Nodes, nil
+	forceDoneStatus(nodes)
+	return nodes, nil
 }
 
 // archivePath returns the .org_archive path for a source file.

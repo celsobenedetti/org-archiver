@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/celsobenedetti/org-archiver/internal/orgfile"
+	"github.com/celsobenedetti/orgfile"
 	"github.com/niklasfasching/go-org/org"
 )
 
@@ -87,21 +87,8 @@ func TestPartitionDoneNestedUnderOpenParent(t *testing.T) {
 	}
 }
 
-func TestShiftHeadlineRelevels(t *testing.T) {
-	nodes := mustParse(t, `*** DONE deep
-**** sub
-`)
-	h := nodes[0].(org.Headline)
-	shifted := shiftHeadline(h, 2-h.Lvl)
-
-	if shifted.Lvl != 2 {
-		t.Fatalf("root Lvl = %d, want 2", shifted.Lvl)
-	}
-	child := shifted.Children[0].(org.Headline)
-	if child.Lvl != 3 {
-		t.Fatalf("child Lvl = %d, want 3", child.Lvl)
-	}
-}
+// re-leveling itself is tested in the orgfile package; TestBuildArchiveSection
+// covers it through the archiver's own path.
 
 func TestBuildArchiveSection(t *testing.T) {
 	nodes := mustParse(t, `*** DONE deep item
