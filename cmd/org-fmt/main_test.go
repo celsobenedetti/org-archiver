@@ -62,6 +62,18 @@ func TestFormatCollapsesBlankLines(t *testing.T) {
 	}
 }
 
+func TestFormatTrimsTrailingWhitespace(t *testing.T) {
+	src := "* head   \ntext\t\t\n#+BEGIN_SRC python\nx=1  \n#+END_SRC\n"
+	got, err := format(src, "t.org")
+	if err != nil {
+		t.Fatalf("format: %v", err)
+	}
+	want := "* head\ntext\n#+BEGIN_SRC python\nx=1\n#+END_SRC\n"
+	if got != want {
+		t.Fatalf("trim mismatch:\n--- got ---\n%q\n--- want ---\n%q", got, want)
+	}
+}
+
 func TestFormatPreservesBlankLinesInBlocks(t *testing.T) {
 	src := "#+BEGIN_SRC python\nx=1\n\n\n\ny=2\n#+END_SRC\n"
 	got, err := format(src, "t.org")

@@ -52,7 +52,16 @@ func format(source, path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return collapseBlankLines(orgfile.Render(nodes)), nil
+	return trimTrailingWhitespace(collapseBlankLines(orgfile.Render(nodes))), nil
+}
+
+// trimTrailingWhitespace removes trailing spaces and tabs from every line.
+func trimTrailingWhitespace(s string) string {
+	lines := strings.Split(s, "\n")
+	for i, line := range lines {
+		lines[i] = strings.TrimRight(line, " \t")
+	}
+	return strings.Join(lines, "\n")
 }
 
 // formatFile rewrites path with standardized formatting in place, reporting
