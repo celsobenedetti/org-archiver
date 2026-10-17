@@ -51,6 +51,28 @@ func TestFormatFileNoOpLeavesUntouched(t *testing.T) {
 	}
 }
 
+func TestFormatConvertsBackticksToVerbatim(t *testing.T) {
+	got, err := format("text `word` more `two`\n", "t.org")
+	if err != nil {
+		t.Fatalf("format: %v", err)
+	}
+	want := "text =word= more =two=\n"
+	if got != want {
+		t.Fatalf("backtick mismatch:\n--- got ---\n%q\n--- want ---\n%q", got, want)
+	}
+}
+
+func TestFormatLeavesBackticksInBlocks(t *testing.T) {
+	src := "#+BEGIN_SRC sh\necho `date`\n#+END_SRC\n"
+	got, err := format(src, "t.org")
+	if err != nil {
+		t.Fatalf("format: %v", err)
+	}
+	if got != src {
+		t.Fatalf("block backticks were altered:\n--- got ---\n%q\n--- want ---\n%q", got, src)
+	}
+}
+
 func TestFormatCollapsesBlankLines(t *testing.T) {
 	got, err := format("* one\n\n\n\ntext\n\n\n* two\n", "t.org")
 	if err != nil {

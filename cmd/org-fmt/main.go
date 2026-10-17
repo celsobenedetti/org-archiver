@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/celsobenedetti/orgfile"
@@ -52,7 +53,31 @@ func format(source, path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return trimTrailingWhitespace(collapseBlankLines(orgfile.Render(nodes))), nil
+	out := backtickVerbatim(orgfile.Render(nodes))
+	return trimTrailingWhitespace(collapseBlankLines(out)), nil
+}
+
+// backtickPair matches a backtick-quoted span on a single line, e.g. `word`.
+var backtickPair = regexp.MustCompile("`([^`\n]+)`")
+
+// backtickVerbatim converts `word` spans to org verbatim =word=. Lines inside
+// #+BEGIN_…/#+END_… blocks are left verbatim, since backticks there are code.
+func backtickVerbatim(s string) string {
+	lines := strings.Split(s, "\n")
+	inBlock := false
+	for i, line := range lines {
+		delim := strings.ToUpper(strings.TrimSpace(line))
+		if strings.HasPrefix(delim, "#+BEGIN_") {
+			inBlock = true
+		}
+		if !inBlock {
+			lines[i] = backtickPair.ReplaceAllString(line, "=$1=")
+		}
+		if strings.HasPrefix(delim, "#+END_") {
+			inBlock = false
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 // trimTrailingWhitespace removes trailing spaces and tabs from every line.
